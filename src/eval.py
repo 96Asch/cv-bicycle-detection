@@ -22,7 +22,7 @@ from mrcnn.model import log
 
 
 sys.path.append(os.path.join(ROOT_DIR, 'Mask_RCNN', 'samples', 'coco'))
-import coco
+import samples.coco as coco
 
 # Device to load the neural network on.
 # Useful if you're training a model on the same 

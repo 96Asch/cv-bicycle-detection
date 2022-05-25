@@ -11,7 +11,7 @@ sys.path.append(os.path.join(ROOT_DIR, 'Mask_RCNN'))
 from mrcnn import utils
 
 sys.path.append(os.path.join(ROOT_DIR, 'Mask_RCNN', 'samples', 'coco'))
-import coco
+import samples.coco as coco
 
 def setupParse():
     parser = argparse.ArgumentParser()
