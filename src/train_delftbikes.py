@@ -85,9 +85,9 @@ def main(args):
     config = DelftBikesConfig()
 
     model_save_dir = os.path.abspath(args.exps)
-    mode = os.path.abspath(args.mode)
     pretrained_model_file = os.path.abspath(args.model)
     data_set_dir = os.path.abspath(args.input)
+    mode = args.mode
 
     assert mode in ['training', 'inference']
 
