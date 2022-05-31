@@ -75,7 +75,9 @@ def setup_parse():
                         help='Either "training" or "inference" mode')
     parser.add_argument('--device', required=False, type=str, default='/gpu:0',
                         help='The device to run on: either /cpu:0 or /gpu:0')
-    parser.add_argument('--layers', )
+    parser.add_argument('--layers', required=True, type=str, default='heads',
+                        help='Can be "heads" for just the final layer or "all" for all layers or '
+                             'a regex matching the MRCNN layer names')
     return parser.parse_args()
 
 
@@ -103,7 +105,7 @@ def main(args):
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
                     epochs=1,
-                    layers='heads')
+                    layers=args.layers)
 
     elif model == 'inference':
         pass
