@@ -1,5 +1,4 @@
 import os
-import sys
 import argparse
 import tensorflow as tf
 import numpy as np
@@ -34,14 +33,15 @@ def setup_parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', required=True, type=str, help='Path to trained weights')
     parser.add_argument('--input', required=True, type=str, help='Path to dataset')
-    parser.add_argument('--exps', required=True, type=str, help='Path to store trained model/logs')
+    parser.add_argument('--exps', required=False, type=str,
+                        help='Path to store trained model/logs. Only relevant for training')
     parser.add_argument('--mode', required=True, type=str,
                         help='Either "training" or "inference" mode')
     parser.add_argument('--device', required=False, type=str, default='/gpu:0',
                         help='The device to run on: either /cpu:0 or /gpu:0')
-    parser.add_argument('--layers', required=True, type=str, default='heads',
+    parser.add_argument('--layers', required=False, type=str, default='heads',
                         help='Can be "heads" for just the final layer or "all" for all layers or '
-                             'a regex matching the MRCNN layer names')
+                             'a regex matching the MRCNN layer names. Only relevant for training')
     return parser.parse_args()
 
 
