@@ -2,28 +2,14 @@ import os
 import sys
 import argparse
 import tensorflow as tf
+import numpy as np
+from tqdm import tqdm
 from pycocotools.coco import COCO
 
 from mrcnn.config import Config
 from mrcnn import utils
 import mrcnn.model as modellib
 from samples.coco.coco import CocoDataset, DEFAULT_DATASET_YEAR
-
-
-# Root directory of the project
-ROOT_DIR = os.path.abspath("../../")
-
-# Import Mask RCNN
-sys.path.append(ROOT_DIR)  # To find local version of the library
-
-# Directory to save logs and trained model
-MODEL_DIR = os.path.join(ROOT_DIR, "logs")
-
-# Local path to trained weights file
-COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
-# Download COCO trained weights from Releases if needed
-if not os.path.exists(COCO_MODEL_PATH):
-    utils.download_trained_weights(COCO_MODEL_PATH)
 
 
 class DelftBikesConfig(Config):
@@ -42,28 +28,6 @@ class DelftBikesDataSet(CocoDataset):
                                                                 DEFAULT_DATASET_YEAR))
         class_ids = coco.getCatIds(catNms=['BG', 'bicycle'])
         self.load_coco(dataset_dir, subset, class_ids=class_ids)
-
-        # assert subset in ['all', 'train', 'val']
-        #
-        # coco = COCO("{}/coco_extended_with_delftbikes_{}.json".format(dataset_dir, subset))
-        # image_dir = "{}/{}".format(dataset_dir, subset)
-        # class_ids = coco.getCatIds(catNms=['BG', 'bicycle'])
-        #
-        # # Add classes
-        # for i in class_ids:
-        #     self.add_class("coco", i, coco.loadCats(i)[0]["name"])
-        #
-        # image_ids = list(coco.imgs.keys())
-        #
-        # # Add images
-        # for i in image_ids:
-        #     self.add_image(
-        #         "coco", image_id=i,
-        #         path=os.path.join(image_dir, coco.imgs[i]['file_name']),
-        #         width=coco.imgs[i]["width"],
-        #         height=coco.imgs[i]["height"],
-        #         annotations=coco.loadAnns(coco.getAnnIds(
-        #             imgIds=[i], catIds=class_ids, iscrowd=None)))
 
 
 def setup_parse():
@@ -96,19 +60,39 @@ def main(args):
 
     model.load_weights(pretrained_model_file)
 
-    if model == 'training':
+    if mode == 'training':
         dataset_train = DelftBikesDataSet()
         dataset_train.load_delft_bikes(data_set_dir, 'train')
         dataset_val = DelftBikesDataSet()
-        dataset_train.load_delft_bikes(data_set_dir, 'val')
+        dataset_val.load_delft_bikes(data_set_dir, 'val')
 
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
                     epochs=1,
                     layers=args.layers)
 
-    elif model == 'inference':
-        pass
+    elif mode == 'inference':
+        dataset_val = DelftBikesDataSet()
+        dataset_val.load_delft_bikes(data_set_dir, 'val')
+
+        APs = []
+        for image_id in tqdm(dataset_val.image_ids):
+
+            # Load image and ground truth data
+            image, image_meta, gt_class_id, gt_bbox, gt_mask = \
+                modellib.load_image_gt(dataset_val, config, image_id, use_mini_mask=False)
+
+            # Run object detection
+            results = model.detect([image], verbose=0)
+            r = results[0]
+
+            # Compute AP
+            AP, precisions, recalls, overlaps = \
+                utils.compute_ap(gt_bbox, gt_class_id, gt_mask,
+                                 r["rois"], r["class_ids"], r["scores"], r['masks'])
+            APs.append(AP)
+
+        print("mAP: ", np.mean(APs))
 
 
 if __name__ == '__main__':
